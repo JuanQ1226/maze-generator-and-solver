@@ -24,17 +24,18 @@ import Card from '../components/Card.astro';
 <script>
 	const canvas = document.getElementById('maze');
 	const ctx = canvas.getContext('2d');
-
 	const size = document.getElementById('size');
+	let tiles = 20;
+
 	size.addEventListener('input', () => {
 		ctx.fillStyle = 'black';
 		ctx.clearRect(0,0,canvas.width,canvas.height);
 		const m = parseInt(size.value);
 		const n = parseInt(size.value);
-		r = m;
-		grid = generateMaze(m,n);
-		drawMaze(grid);
-		label.innerHTML = `Size: ${r} x ${r}`;
+		tiles = m;
+		mazeGrid = generateMaze(m,n);
+		drawMaze(mazeGrid);
+		label.innerHTML = `Size: ${tiles} x ${tiles}`;
 	});
 
 	ctx.fillStyle = 'black';
@@ -51,6 +52,7 @@ import Card from '../components/Card.astro';
 	}
 	
 	function generateMaze (m,n) {
+		// DFS maze generation algorithm
 		const grid = generateGrid(m,n);
 		const stack = [];
 		let current = [0,0];
@@ -60,6 +62,7 @@ import Card from '../components/Card.astro';
 			const neighbors = [];
 			const x = current[0];
 			const y = current[1];
+			// Get all neighbors
 			if (x > 1) {
 				neighbors.push([x-2,y]);
 			}
@@ -72,16 +75,22 @@ import Card from '../components/Card.astro';
 			if (y < n-2) {
 				neighbors.push([x,y+2]);
 			}
+			// Get unvisited neighbors
 			const unvisited = neighbors.filter(([x,y]) => grid[x][y] === 1);
 			if (unvisited.length > 0) {
+				// Choose a random unvisited neighbor
 				const next = unvisited[Math.floor(Math.random() * unvisited.length)];
 				const nx = next[0];
 				const ny = next[1];
 				grid[nx][ny] = 0;
+				// Remove the wall between the current cell and the random neighbor cell
 				grid[x + Math.floor((nx - x) / 2)][y + Math.floor((ny - y) / 2)] = 0;
+				// Push the random neighbor cell to the stack
 				stack.push(next);
+				// Set the random neighbor cell as the current cell
 				current = next;
 			} else {
+				// If there are no unvisited neighbors, pop the stack
 				current = stack.pop();
 			}
 		}
@@ -101,23 +110,30 @@ import Card from '../components/Card.astro';
 			}
 		}
 	}
-	let r = 20;
-	let grid = generateMaze(r,r);
-	drawMaze(grid);
+	
+	let mazeGrid = generateMaze(tiles,tiles);
+	
+	drawMaze(mazeGrid);
 
 
 	function findShortestPathToBottomCorner(maze){
+		// BFS algorithm to find the shortest path to the bottom corner.
 		const m = maze.length;
 		const n = maze[0].length;
+		// Queue to store the cells to visit
 		const queue = [[0,0]];
 		const visited = new Set();
 		const parent = {};
+		// Start from the top left corner
 		visited.add('0,0');
 		while (queue.length > 0) {
+			// Get the first cell in the queue
 			const [x,y] = queue.shift();
+			// If we reach the bottom corner, break
 			if (x === m-2 && y === n-2) {
 				break;
 			}
+			// Check the neighbors, if they are not visited and not a wall, add them to the queue.
 			if (x > 0 && maze[x-1][y] === 0 && !visited.has(`${x-1},${y}`)) {
 				queue.push([x-1,y]);
 				visited.add(`${x-1},${y}`);
@@ -139,6 +155,7 @@ import Card from '../components/Card.astro';
 				parent[`${x},${y+1}`] = [x,y];
 			}
 		}
+		// Reconstruct the path from the parent cells
 		const path = [];
 		let current = [m-2,n-2];
 		while (current) {
@@ -151,11 +168,11 @@ import Card from '../components/Card.astro';
 
 
 	function handleSolve() {
-		const path = findShortestPathToBottomCorner(grid);
+		const path = findShortestPathToBottomCorner(mazeGrid);
 		ctx.fillStyle = 'red';
 		for (const [x,y] of path) {
 			console.log(x,y);
-			ctx.fillRect(x * canvas.width/grid[0].length, y *canvas.height/grid.length, canvas.width/grid[0].length, canvas.height/grid.length);
+			ctx.fillRect(x * canvas.width / mazeGrid[0].length, y * canvas.height / mazeGrid.length, canvas.width / mazeGrid[0].length, canvas.height / mazeGrid.length);
 		}
 	}
 
@@ -166,9 +183,8 @@ import Card from '../components/Card.astro';
 	function handleReset () {
 		ctx.fillStyle = 'black';
 		ctx.clearRect(0,0,canvas.width,canvas.height);
-		grid = generateMaze(r,r);
-		drawMaze(grid);
-	
+		mazeGrid = generateMaze(tiles,tiles);
+		drawMaze(mazeGrid);
 	}
 
 	document.getElementById('reset').addEventListener('click', handleReset);
