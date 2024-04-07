@@ -1,0 +1,223 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+---
+
+<Layout title="Maze Generator">
+	<main>
+		<div class="title">
+			<h1>Maze Generator</h1>
+			<p>Generate a random maze using a depth-first search algorithm. Solve the shortest path using breath-first text.</p>
+		</div>
+		<div class="maze-container">
+			<canvas id="maze" width="400" height="400"></canvas>
+			<div>
+				<label id="range-label" for="size">{`Size 20`}</label>
+				<input type="range" class="size" step="2" id="size" min="6" max="200" value="10">
+				<button class="btn" id="solve">Solve</button>
+				<button class="btn" id="reset">Re-Generate</button>
+			</div>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	const canvas = document.getElementById('maze');
+	const ctx = canvas.getContext('2d');
+
+	const size = document.getElementById('size');
+	size.addEventListener('input', () => {
+		ctx.fillStyle = 'black';
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		const m = parseInt(size.value);
+		const n = parseInt(size.value);
+		r = m;
+		grid = generateMaze(m,n);
+		drawMaze(grid);
+		label.innerHTML = `Size: ${r} x ${r}`;
+	});
+
+	ctx.fillStyle = 'black';
+	
+	function generateGrid (m,n) {
+		const grid = [];
+		for (let i = 0; i < m; i++) {
+			grid[i] = [];
+			for (let j = 0; j < n; j++) {
+				grid[i][j] = 1;
+			}
+		}
+		return grid;
+	}
+	
+	function generateMaze (m,n) {
+		const grid = generateGrid(m,n);
+		const stack = [];
+		let current = [0,0];
+		grid[current[0]][current[1]] = 0;
+		stack.push(current);
+		while (stack.length > 0) {
+			const neighbors = [];
+			const x = current[0];
+			const y = current[1];
+			if (x > 1) {
+				neighbors.push([x-2,y]);
+			}
+			if (x < m-2) {
+				neighbors.push([x+2,y]);
+			}
+			if (y > 1) {
+				neighbors.push([x,y-2]);
+			}
+			if (y < n-2) {
+				neighbors.push([x,y+2]);
+			}
+			const unvisited = neighbors.filter(([x,y]) => grid[x][y] === 1);
+			if (unvisited.length > 0) {
+				const next = unvisited[Math.floor(Math.random() * unvisited.length)];
+				const nx = next[0];
+				const ny = next[1];
+				grid[nx][ny] = 0;
+				grid[x + Math.floor((nx - x) / 2)][y + Math.floor((ny - y) / 2)] = 0;
+				stack.push(next);
+				current = next;
+			} else {
+				current = stack.pop();
+			}
+		}
+		return grid;
+	}
+
+	function drawMaze (grid) {
+		const m = grid.length;
+		const n = grid[0].length;
+		const cellWidth = canvas.width / m;
+		const cellHeight = canvas.height / n;
+		for (let i = 0; i < m; i++) {
+			for (let j = 0; j < n; j++) {
+				if (grid[i][j] === 1) {
+					ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+				}
+			}
+		}
+	}
+	let r = 20;
+	let grid = generateMaze(r,r);
+	drawMaze(grid);
+
+
+	function findShortestPathToBottomCorner(maze){
+		const m = maze.length;
+		const n = maze[0].length;
+		const queue = [[0,0]];
+		const visited = new Set();
+		const parent = {};
+		visited.add('0,0');
+		while (queue.length > 0) {
+			const [x,y] = queue.shift();
+			if (x === m-2 && y === n-2) {
+				break;
+			}
+			if (x > 0 && maze[x-1][y] === 0 && !visited.has(`${x-1},${y}`)) {
+				queue.push([x-1,y]);
+				visited.add(`${x-1},${y}`);
+				parent[`${x-1},${y}`] = [x,y];
+			}
+			if (x < m-2 && maze[x+1][y] === 0 && !visited.has(`${x+1},${y}`)) {
+				queue.push([x+1,y]);
+				visited.add(`${x+1},${y}`);
+				parent[`${x+1},${y}`] = [x,y];
+			}
+			if (y > 0 && maze[x][y-1] === 0 && !visited.has(`${x},${y-1}`)) {
+				queue.push([x,y-1]);
+				visited.add(`${x},${y-1}`);
+				parent[`${x},${y-1}`] = [x,y];
+			}
+			if (y < n-2 && maze[x][y+1] === 0 && !visited.has(`${x},${y+1}`)) {
+				queue.push([x,y+1]);
+				visited.add(`${x},${y+1}`);
+				parent[`${x},${y+1}`] = [x,y];
+			}
+		}
+		const path = [];
+		let current = [m-2,n-2];
+		while (current) {
+			path.unshift(current);
+			current = parent[`${current[0]},${current[1]}`];
+		}
+		return path;
+	
+	}
+
+
+	function handleSolve() {
+		const path = findShortestPathToBottomCorner(grid);
+		ctx.fillStyle = 'red';
+		for (const [x,y] of path) {
+			console.log(x,y);
+			ctx.fillRect(x * canvas.width/grid[0].length, y *canvas.height/grid.length, canvas.width/grid[0].length, canvas.height/grid.length);
+		}
+	}
+
+	document.getElementById('solve').addEventListener('click', handleSolve);
+
+
+
+	function handleReset () {
+		ctx.fillStyle = 'black';
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		grid = generateMaze(r,r);
+		drawMaze(grid);
+	
+	}
+
+	document.getElementById('reset').addEventListener('click', handleReset);
+	
+	const label = document.getElementById('range-label');
+	
+
+</script>
+
+
+
+<style>
+	main {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+	.title {
+		text-align: center;
+		max-width: 40%;
+	}
+	canvas {
+		border: 1px solid #000;
+		border-top: 5px solid #000;
+		border-left: 5px solid #000;
+		background-color: aliceblue;
+	}
+
+	.maze-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.btn {
+		padding: 0.5rem 1rem;
+		background-color: #000;
+		color: #fff;
+		border: none;
+		cursor: pointer;
+		border-radius: 10px;
+		transition: background-color 0.3s, transform 0.3s;
+	}
+
+	.btn:hover {
+		background-color: #333;
+		transform: scale(1.05);
+	}
+</style>
+
