@@ -104,7 +104,15 @@ import Card from '../components/Card.astro';
 		const cellHeight = canvas.height / n;
 		for (let i = 0; i < m; i++) {
 			for (let j = 0; j < n; j++) {
+				if(i === 0 && j === 0) {
+					ctx.fillStyle = 'blue';
+					ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+				} else if (i === m-2 && j === n-2) {
+					ctx.fillStyle = 'green';
+					ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+				} 
 				if (grid[i][j] === 1) {
+					ctx.fillStyle = 'black';
 					ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
 				}
 			}
@@ -171,6 +179,9 @@ import Card from '../components/Card.astro';
 		const path = findShortestPathToBottomCorner(mazeGrid);
 		ctx.fillStyle = 'red';
 		for (const [x,y] of path) {
+			if (x === 0 && y === 0 || x === mazeGrid.length - 2 && y === mazeGrid[0].length - 2) {
+				continue;
+			}
 			console.log(x,y);
 			ctx.fillRect(x * canvas.width / mazeGrid[0].length, y * canvas.height / mazeGrid.length, canvas.width / mazeGrid[0].length, canvas.height / mazeGrid.length);
 		}
